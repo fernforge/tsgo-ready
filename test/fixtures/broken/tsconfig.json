@@ -1,0 +1,17 @@
+{
+  // legacy config that tsgo will choke on
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "importsNotUsedAsValues": "error",
+    "keyofStringsOnly": true,
+    "ignoreDeprecations": "6.0",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "isolatedModules": true,
+    "baseUrl": "./src",
+    "outDir": "dist",
+  },
+  "include": ["src"],
+}

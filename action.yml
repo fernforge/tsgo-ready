@@ -1,0 +1,42 @@
+name: "tsgo-ready"
+description: "Scan your TypeScript repo for what breaks on the move to tsgo / TypeScript 7.0 — removed tsconfig flags, Compiler-API tooling, decorator/JSDoc risks."
+author: "fernforge"
+branding:
+  icon: "alert-triangle"
+  color: "blue"
+inputs:
+  project:
+    description: "Project directory to scan."
+    required: false
+    default: "."
+  tsconfig:
+    description: "Explicit tsconfig path (default: auto-discover)."
+    required: false
+    default: ""
+  fail-on:
+    description: "Fail the job when findings at or above this severity exist: error | warn | review | never."
+    required: false
+    default: "warn"
+  no-source:
+    description: "Skip the source-file walk (config + dependencies only). Set to 'true' to enable."
+    required: false
+    default: ""
+  version:
+    description: "Git ref (branch or tag) of fernforge/tsgo-ready to run via npx."
+    required: false
+    default: "main"
+runs:
+  using: "composite"
+  steps:
+    - name: Run tsgo-ready
+      shell: bash
+      run: |
+        args=()
+        [ -n "${{ inputs.project }}" ] && args+=(--project "${{ inputs.project }}")
+        [ -n "${{ inputs.tsconfig }}" ] && args+=(--tsconfig "${{ inputs.tsconfig }}")
+        [ -n "${{ inputs.fail-on }}" ] && args+=(--fail-on "${{ inputs.fail-on }}")
+        [ -n "${{ inputs.no-source }}" ] && args+=(--no-source)
+        # Write a Markdown report to the GitHub step summary, then run again for the pass/fail gate.
+        npx -y "github:fernforge/tsgo-ready#${{ inputs.version }}" "${args[@]}" --markdown --out "$RUNNER_TEMP/tsgo-ready.md" || true
+        cat "$RUNNER_TEMP/tsgo-ready.md" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+        npx -y "github:fernforge/tsgo-ready#${{ inputs.version }}" "${args[@]}" --no-color
