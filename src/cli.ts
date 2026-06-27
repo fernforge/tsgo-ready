@@ -4,14 +4,14 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { scan } from "./index.js";
-import { renderConsole, renderJson, renderMarkdown, summaryLine } from "./report.js";
+import { renderConsole, renderJson, renderMarkdown, renderSarif, summaryLine } from "./report.js";
 
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 
 interface Args {
   project: string;
   tsconfig?: string;
-  format: "console" | "json" | "markdown";
+  format: "console" | "json" | "markdown" | "sarif";
   out?: string;
   noSource: boolean;
   noColor: boolean;
@@ -51,6 +51,9 @@ function parseArgs(argv: string[]): Args {
       case "--markdown":
         a.format = "markdown";
         break;
+      case "--sarif":
+        a.format = "sarif";
+        break;
       case "--out":
         a.out = next();
         break;
@@ -88,9 +91,10 @@ Usage:
 Options:
   -p, --project <dir>   Project directory to scan (default: ".")
       --tsconfig <path> Explicit tsconfig path (default: auto-discover)
-      --format <fmt>    console | json | markdown (default: console)
+      --format <fmt>    console | json | markdown | sarif (default: console)
       --json            Shorthand for --format json
       --markdown        Shorthand for --format markdown
+      --sarif           Shorthand for --format sarif (GitHub code scanning)
       --out <file>      Write the report to a file instead of stdout
       --no-source       Skip the source-file walk (config + deps only)
       --no-color        Disable ANSI colors
@@ -133,6 +137,7 @@ function main(): void {
   let report: string;
   if (a.format === "json") report = renderJson(result);
   else if (a.format === "markdown") report = renderMarkdown(result);
+  else if (a.format === "sarif") report = renderSarif(result, VERSION);
   else report = renderConsole(result, noColor);
 
   if (a.out) {

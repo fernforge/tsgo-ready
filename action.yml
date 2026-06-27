@@ -21,6 +21,10 @@ inputs:
     description: "Skip the source-file walk (config + dependencies only). Set to 'true' to enable."
     required: false
     default: ""
+  sarif-file:
+    description: "Also write a SARIF report to this path. Pair with github/codeql-action/upload-sarif to see findings in the Security tab and as PR annotations."
+    required: false
+    default: ""
   version:
     description: "Git ref (branch or tag) of fernforge/tsgo-ready to run via npx."
     required: false
@@ -36,7 +40,12 @@ runs:
         [ -n "${{ inputs.tsconfig }}" ] && args+=(--tsconfig "${{ inputs.tsconfig }}")
         [ -n "${{ inputs.fail-on }}" ] && args+=(--fail-on "${{ inputs.fail-on }}")
         [ -n "${{ inputs.no-source }}" ] && args+=(--no-source)
-        # Write a Markdown report to the GitHub step summary, then run again for the pass/fail gate.
+        # Write a Markdown report to the GitHub step summary.
         npx -y "github:fernforge/tsgo-ready#${{ inputs.version }}" "${args[@]}" --markdown --out "$RUNNER_TEMP/tsgo-ready.md" || true
         cat "$RUNNER_TEMP/tsgo-ready.md" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+        # Optionally emit SARIF for code scanning (upload it yourself with github/codeql-action/upload-sarif).
+        if [ -n "${{ inputs.sarif-file }}" ]; then
+          npx -y "github:fernforge/tsgo-ready#${{ inputs.version }}" "${args[@]}" --sarif --out "${{ inputs.sarif-file }}" || true
+        fi
+        # Run again for the pass/fail gate.
         npx -y "github:fernforge/tsgo-ready#${{ inputs.version }}" "${args[@]}" --no-color

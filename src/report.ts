@@ -110,3 +110,69 @@ export function renderMarkdown(r: ScanResult): string {
 function md(s: string): string {
   return s.replace(/\|/g, "\\|");
 }
+
+// SARIF 2.1.0 — so the GitHub Action can upload findings to code scanning and they show up
+// inline in the Security tab and as PR annotations. Severity maps to the three SARIF levels:
+// error -> error, warn -> warning, review -> warning, info -> note.
+const SARIF_LEVEL: Record<Severity, "error" | "warning" | "note"> = {
+  error: "error",
+  warn: "warning",
+  review: "warning",
+  info: "note",
+};
+
+export function renderSarif(r: ScanResult, version = "0.1.0"): string {
+  // One rule per distinct finding id, in first-seen order.
+  const rules: { id: string; name: string; shortDescription: { text: string }; defaultConfiguration: { level: string }; helpUri?: string }[] = [];
+  const ruleIndex = new Map<string, number>();
+  for (const f of r.findings) {
+    if (ruleIndex.has(f.id)) continue;
+    ruleIndex.set(f.id, rules.length);
+    rules.push({
+      id: f.id,
+      name: f.id.replace(/[^A-Za-z0-9]+/g, "_"),
+      shortDescription: { text: f.title },
+      defaultConfiguration: { level: SARIF_LEVEL[f.severity] },
+      ...(f.docs ? { helpUri: f.docs } : {}),
+    });
+  }
+
+  const results = r.findings.map((f) => {
+    // Fall back to package.json for dep findings with no file, tsconfig for config findings.
+    const uri = f.file ?? (f.category === "tooling" ? "package.json" : r.tsconfigPath ?? "tsconfig.json");
+    const text = f.evidence ? `${f.detail} (found: ${f.evidence})` : f.detail;
+    return {
+      ruleId: f.id,
+      ruleIndex: ruleIndex.get(f.id),
+      level: SARIF_LEVEL[f.severity],
+      message: { text: `${f.title} — ${text}` },
+      locations: [
+        {
+          physicalLocation: {
+            artifactLocation: { uri, uriBaseId: "SRCROOT" },
+            ...(f.line ? { region: { startLine: f.line } } : {}),
+          },
+        },
+      ],
+    };
+  });
+
+  const sarif = {
+    $schema: "https://json.schemastore.org/sarif-2.1.0.json",
+    version: "2.1.0",
+    runs: [
+      {
+        tool: {
+          driver: {
+            name: "tsgo-ready",
+            informationUri: "https://github.com/fernforge/tsgo-ready",
+            version,
+            rules,
+          },
+        },
+        results,
+      },
+    ],
+  };
+  return JSON.stringify(sarif, null, 2);
+}

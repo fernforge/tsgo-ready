@@ -71,14 +71,32 @@ It writes a Markdown table to the job summary and fails the step on findings at 
 - run: npx -y github:fernforge/tsgo-ready --fail-on error
 ```
 
+### Code scanning (Security tab + PR annotations)
+
+Emit SARIF and upload it so each finding shows up inline on the PR and in the repo's Security tab:
+
+```yaml
+- uses: fernforge/tsgo-ready@main
+  with:
+    fail-on: never        # let the gate happen in code scanning, not the step
+    sarif-file: tsgo-ready.sarif
+- uses: github/codeql-action/upload-sarif@v3
+  if: always()
+  with:
+    sarif_file: tsgo-ready.sarif
+```
+
+`error`/`warn` map to SARIF `error`/`warning`; `review`/`info` map to `note`. Each result is anchored to the offending `tsconfig.json` line, `package.json`, or source file.
+
 ## Options
 
 ```
 -p, --project <dir>    directory to scan (default: ".")
     --tsconfig <path>  explicit tsconfig (default: auto-discover)
-    --format <fmt>     console | json | markdown
+    --format <fmt>     console | json | markdown | sarif
     --json             shorthand for --format json
     --markdown         shorthand for --format markdown
+    --sarif            shorthand for --format sarif (GitHub code scanning)
     --out <file>       write the report to a file
     --no-source        skip the source-file walk (config + deps only)
     --no-color         disable ANSI colors

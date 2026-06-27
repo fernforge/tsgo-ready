@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { scan } from "../src/index.js";
+import { renderSarif } from "../src/report.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const broken = join(here, "fixtures", "broken");
@@ -54,4 +55,25 @@ test("clean fixture: no errors or warnings", () => {
 test("noSource skips the source walk", () => {
   const r = scan({ projectDir: broken, noSource: true });
   assert.ok(!r.findings.some((f) => f.category === "source"));
+});
+
+test("renderSarif: valid 2.1.0 shape with located, indexed results", () => {
+  const r = scan({ projectDir: broken });
+  const doc = JSON.parse(renderSarif(r, "9.9.9"));
+  assert.equal(doc.version, "2.1.0");
+  const run = doc.runs[0];
+  assert.equal(run.tool.driver.name, "tsgo-ready");
+  assert.equal(run.tool.driver.version, "9.9.9");
+  assert.equal(run.results.length, r.findings.length);
+  // every result has a location and a rule index that points into the rules table
+  for (const res of run.results) {
+    assert.ok(res.locations?.[0]?.physicalLocation?.artifactLocation?.uri, "located");
+    assert.ok(["error", "warning", "note"].includes(res.level));
+    const idx = res.ruleIndex;
+    assert.ok(idx >= 0 && idx < run.tool.driver.rules.length, "rule index in range");
+    assert.equal(run.tool.driver.rules[idx].id, res.ruleId);
+  }
+  // dep findings with no file fall back to package.json
+  const dep = run.results.find((x: { ruleId: string }) => x.ruleId === "tooling/compiler-api");
+  assert.equal(dep.locations[0].physicalLocation.artifactLocation.uri, "package.json");
 });
