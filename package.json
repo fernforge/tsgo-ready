@@ -1,6 +1,6 @@
 {
   "name": "tsgo-ready",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Scan your TypeScript repo for what the move to the native Go compiler (tsgo / TypeScript 7.0) breaks — removed tsconfig flags, Compiler-API-dependent tooling that needs TS 6 side-by-side, and decorator/JSDoc behavior changes. Deterministic CLI + GitHub Action, no LLM key.",
   "type": "module",
   "bin": {

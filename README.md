@@ -13,15 +13,15 @@ Deterministic. No LLM key, no network, no telemetry. It reads your `tsconfig.jso
 ## Run it
 
 ```bash
-npx github:fernforge/tsgo-ready
+npx tsgo-ready
 ```
 
 Point it at a directory, or change the output:
 
 ```bash
-npx github:fernforge/tsgo-ready --project ./packages/api
-npx github:fernforge/tsgo-ready --json --out tsgo-report.json
-npx github:fernforge/tsgo-ready --markdown
+npx tsgo-ready --project ./packages/api
+npx tsgo-ready --json --out tsgo-report.json
+npx tsgo-ready --markdown
 ```
 
 ## What the output looks like
@@ -68,7 +68,7 @@ The split matters. The RC notes say code that compiles cleanly under TS 6 (no de
 It writes a Markdown table to the job summary and fails the step on findings at or above `fail-on` (default `warn`). Or call the CLI directly:
 
 ```yaml
-- run: npx -y github:fernforge/tsgo-ready --fail-on error
+- run: npx -y tsgo-ready --fail-on error
 ```
 
 ### Code scanning (Security tab + PR annotations)
