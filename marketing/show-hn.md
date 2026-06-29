@@ -19,7 +19,7 @@ TypeScript 7's native Go compiler (tsgo) shipped its RC on June 18, stable about
 tsgo-ready is a static scan over your `tsconfig.json`, `package.json`, and source — no LLM, no network, no telemetry. It prints a fix-list split by severity: `error` for things that hard-fail, `warn` for removed surfaces, `review` for "the RC says this should be fine, but build and test it anyway." It deliberately doesn't cry wolf about emit it can't statically verify — clean TS 6 builds should emit the same under 7.0, so decorators land as `review`, not `error`.
 
 ```
-npx github:fernforge/tsgo-ready
+npx tsgo-ready
 ```
 
 There's a GitHub Action too (Markdown job summary + SARIF for the Security tab). It's a heuristic checklist, not a compiler — confirm each finding, then run `tsgo --noEmit` and your tests. Rules track the official typescript-go CHANGES file and will move as 7.0 reaches stable and 7.1 restores the Compiler API.
